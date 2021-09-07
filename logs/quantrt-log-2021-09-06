@@ -1,0 +1,21 @@
+[quantrtlog] @ 2021-09-06 16:55:17,046 from exception with level ERROR: Exception can't register atexit after shutdown connecting to websocket at uri: wss://ws-feed.pro.coinbase.com
+Traceback (most recent call last):
+  File "/Users/arthurburke/Developer/quantrt/venv/lib/python3.9/site-packages/quantrt_aburke-0.0.1-py3.9.egg/quantrt/api/ws.py", line 110, in subscribe
+    self.socket = await websockets.client.connect(self.url)
+  File "/Users/arthurburke/Developer/quantrt/venv/lib/python3.9/site-packages/websockets/legacy/client.py", line 622, in __await_impl__
+    transport, protocol = await self._create_connection()
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py", line 1017, in create_connection
+    infos = await self._ensure_resolved(
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py", line 1396, in _ensure_resolved
+    return await loop.getaddrinfo(host, port, family=family, type=type,
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py", line 856, in getaddrinfo
+    return await self.run_in_executor(
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py", line 809, in run_in_executor
+    executor = concurrent.futures.ThreadPoolExecutor(
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/concurrent/futures/__init__.py", line 49, in __getattr__
+    from .thread import ThreadPoolExecutor as te
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/concurrent/futures/thread.py", line 37, in <module>
+    threading._register_atexit(_python_exit)
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/threading.py", line 1374, in _register_atexit
+    raise RuntimeError("can't register atexit after shutdown")
+RuntimeError: can't register atexit after shutdown

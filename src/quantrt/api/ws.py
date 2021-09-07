@@ -11,8 +11,9 @@ from asyncio import Queue
 from enum import Enum
 from typing import Callable, Union, Dict, Optional
 
-from src.common.types import OneOrMany, is_one
-from src.common import QuantrtLog
+from quantrt.api.auth import sign
+from quantrt.common.types import OneOrMany, is_one
+from quantrt.common.log import QuantrtLog
 
 
 __all__ = ["Channel", "WebsocketFeed"]
@@ -91,17 +92,7 @@ class WebsocketFeed:
         }
         
         if self.credentials:
-            timestamp = str(time.time())
-            message = str.encode(timestamp + "get" + "/users/self/verify", encoding="utf-8")
-            hmac_key = base64.b64decode(self.credentials["secret"])
-            signature = hmac.new(hmac_key, message, hashlib.sha256)
-            signature_b64 = signature.digest().encode('base64').rstrip('\n')
-
-            request["CB-ACCESS-SIGN"] = signature_b64
-            request["CB-ACCESS-TIMESTAMP"] = timestamp
-            request["CB-ACCESS-KEY"] = self.credentials["key"]
-            request["CB-ACCESS-PASSPHRASE"] = self.credentials["passphrase"]
-            request["Content-Type"] = "application/json"
+            request = sign("get", "/users/self/verify", request, self.credentials)
         
         if is_one(product_ids):
             product_ids = [product_ids]
@@ -113,7 +104,8 @@ class WebsocketFeed:
 
         request["product_ids"] = product_ids
         request["channels"] = channels
-
+        QuantrtLog.info("Sending request {} to coinbase pro".format(request))
+        
         if not self.connected:
             try:
                 self.socket = await websockets.client.connect(self.url)

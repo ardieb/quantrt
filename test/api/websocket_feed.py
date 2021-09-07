@@ -1,8 +1,7 @@
 if __name__ == "__main__":
     import asyncio
     import threading
-
-    from src.api import *
+    from quantrt.api.ws import *
 
     feed = WebsocketFeed("credentials/coinbasepro.json")
     loop = asyncio.get_event_loop()

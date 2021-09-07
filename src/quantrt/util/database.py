@@ -2,7 +2,7 @@ import asyncpg
 import pandas as pd
 
 from asyncpg import Pool
-from common import QuantrtLog
+from quantrt.common import QuantrtLog
 
 
 async def create_connection_pool(dsn: str) -> Pool:
