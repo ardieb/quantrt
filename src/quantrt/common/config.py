@@ -2,6 +2,10 @@ import os
 
 from asyncpg import Pool
 
+from collections import OrderedDict
+
+from quantrt.common.types import REST
+
 
 # The root directory of the app. This is three levels above this file's path.
 app_dir: str = os.path.dirname(
@@ -21,3 +25,11 @@ db_conn_pool: Pool
 
 # This is used to identify the build when the applicaton is initialized.
 build_label: str
+
+
+# The global authenticated user used throughout the application lifecycle.
+rest_client: REST
+
+
+# SQL prepared statements.
+prepared_sql: OrderedDict
