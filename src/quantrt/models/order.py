@@ -26,7 +26,7 @@ class OrderStatus(Enum):
 @dataclass
 class Order:
     # order id from coinbase
-    id: str
+    order_id: str
     # Product ticker.
     product: str
     # Timestamp of the trade.
@@ -50,13 +50,23 @@ async def save(order: Order, pool: Optional[asyncpg.Pool] = None):
 
     async with pool.acquire() as conn:
         sql = """
-            INSERT INTO order (id, product, timestamp, status, side, amount, price)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            ON CONFLICT (product, id) DO UPDATE
+            INSERT INTO order 
+                (id, product, timestamp, status, side, amount, price)
+            VALUES 
+                ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT 
+                (product, order_id) 
+            DO UPDATE
+            SET
+                timestamp = EXCLUDED.timestamp,
+                status = EXCLUDED.status,
+                side = EXCLUDED.side,
+                amount = EXCLUDED.amount,
+                price = EXCLUDED.price
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         await statement.executemany((
-            order.id,
+            order.order_id,
             order.product,
             order.timestamp,
             order.status.name,
@@ -74,13 +84,23 @@ async def save_batch(orders: Iterator[Order], pool: Optional[asyncpg.Pool] = Non
 
     async with pool.acquire() as conn:
         sql = """
-            INSERT INTO order (id, product, timestamp, status, side, amount, price)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            ON CONFLICT (product, id) DO UPDATE
+            INSERT INTO order 
+                (id, product, timestamp, status, side, amount, price)
+            VALUES 
+                ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT 
+                (product, order_id) 
+            DO UPDATE
+            SET
+                timestamp = EXCLUDED.timestamp,
+                status = EXCLUDED.status,
+                side = EXCLUDED.side,
+                amount = EXCLUDED.amount,
+                price = EXCLUDED.price
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         await statement.executemany([(
-            order.id,
+            order.order_id,
             order.product,
             order.timestamp,
             order.status.name,
@@ -97,12 +117,12 @@ async def fetch(id: str, pool: Optional[asyncpg.Pool] = None) -> Order:
         raise EnvironmentError("No connection pool has been configured.")
     async with pool.acquire() as conn:
         sql = """
-            SELECT * FROM order WHERE id = $1
+            SELECT * FROM order WHERE order_id = $1
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         row = await statement.fetch(id)
     return Order(
-        id=row[0]["id"],
+        order_id=row[0]["order_id"],
         product=row[0]["product"],
         timestamp=row[0]["timestamp"],
         status=row[0]["status"],
@@ -120,13 +140,13 @@ async def fetch_batch(ids: Iterator[str], pool: Optional[asyncpg.Pool] = None) -
         raise EnvironmentError("No connection pool has been configured.")
     async with pool.acquire() as conn:
         sql = """
-            SELECT * FROM order WHERE id = $1
+            SELECT * FROM order WHERE order_id = $1
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
-        rows = [await statement.fetchrow(id) for id in ids]
+        rows = [await statement.fetchrow(id) for order_id in ids]
 
     return [Order(
-        id=row["id"],
+        order_id=row["order_id"],
         product=row["product"],
         timestamp=row["timestamp"],
         status=row["status"],
@@ -149,7 +169,7 @@ async def fetch_open(product_id: str, pool: Optional[asyncpg.Pool] = None) -> It
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         rows = await statement.fetch(product_id)
     return [Order(
-        id=row["id"],
+        order_id=row["order_id"],
         product=row["product"],
         timestamp=row["timestamp"],
         status=row["status"],

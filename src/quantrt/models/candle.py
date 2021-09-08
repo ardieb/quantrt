@@ -46,9 +46,19 @@ async def save(candle: Candle, pool: Optional[asyncpg.Pool] = None):
 
     async with pool.acquire() as conn:
         sql = """
-            INSERT INTO candle (product, timestamp, timescale, open, high, low, close, volume)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            ON CONFLICT (product, timestamp, timescale) DO UPDATE
+            INSERT INTO candle 
+                (product, timestamp, timescale, open, high, low, close, volume)
+            VALUES 
+                ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT 
+                (product, timestamp, timescale) 
+            DO UPDATE
+            SET 
+                open = EXCLUDED.open,
+                high = EXCLUDED.high,
+                low = EXCLUDED.low,
+                close = EXCLUDED.close,
+                volume = EXCLUDED.volume
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         await statement.executemany((
@@ -71,9 +81,19 @@ async def save_batch(candles: Iterator[Candle], pool: Optional[asyncpg.Pool] = N
     
     async with pool.acquire() as conn:
         sql = """
-            INSERT INTO candle (product, timestamp, timescale, open, high, low, close, volume)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            ON CONFLICT (product, timestamp, timescale) DO UPDATE
+            INSERT INTO candle 
+                (product, timestamp, timescale, open, high, low, close, volume)
+            VALUES 
+                ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT 
+                (product, timestamp, timescale) 
+            DO UPDATE
+            SET 
+                open = EXCLUDED.open,
+                high = EXCLUDED.high,
+                low = EXCLUDED.low,
+                close = EXCLUDED.close,
+                volume = EXCLUDED.volume
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         await statement.executemany([(
