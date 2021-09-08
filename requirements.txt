@@ -3,11 +3,8 @@ scipy
 numpy
 bottleneck
 pytz
-logbook
-astor
 asyncpg
 exchange_calendars
-PyYAML
 coinbasepro
 pandas
 pandas-datareader
@@ -15,5 +12,4 @@ apscheduler
 redis
 TA-lib
 psycopg2-binary
-deprecated
 websockets
