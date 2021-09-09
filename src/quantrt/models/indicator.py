@@ -16,6 +16,9 @@ from typing import Optional, Iterable, Dict
 from quantrt.common.timescale import Timescale
 
 
+__all__ = ["save", "save_batch", "fetch", "fetch_batch"]
+
+
 @dataclass
 class Indicator:
     # Product identifier
@@ -41,7 +44,7 @@ async def save(indicator: Indicator, pool: Optional[asyncpg.Pool] = None):
     async with pool.acquire() as conn:
         values = json.dumps(indicator.values)
         sql = """
-            INSERT INTO candle 
+            INSERT INTO indicator 
                 (product, timestamp, timescale, name, values)
             VALUES 
                 ($1, $2, $3, $4, $5)
@@ -69,7 +72,7 @@ async def save_batch(indicators: Iterable[Indicator], pool: Optional[asyncpg.Poo
 
     async with pool.acquire() as conn:
         sql = """
-            INSERT INTO candle 
+            INSERT INTO indicator 
                 (product, timestamp, timescale, name, values)
             VALUES 
                 ($1, $2, $3, $4, $5)
@@ -99,7 +102,7 @@ async def fetch(product: str, name: str, timestamp: datetime, timescale: Timesca
 
     async with pool.acquire() as conn:
         sql = """
-            SELECT * FROM candle WHERE product = $1 AND timestamp = $2 AND timescale = $3 AND name = $4
+            SELECT * FROM indicator WHERE product = $1 AND timestamp = $2 AND timescale = $3 AND name = $4
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         row = await statement.fetchrow(product, timestamp, timescale.name, name)
@@ -124,7 +127,7 @@ async def fetch_batch(product: str, name: str, start: datetime, stop: datetime, 
 
     async with pool.acquire() as conn:
         sql = """
-            SELECT * FROM candle WHERE product = $1 AND (timestamp => $2 AND timestamp <= $3) AND timescale = $4 AND name = $5
+            SELECT * FROM indicator WHERE product = $1 AND (timestamp => $2 AND timestamp <= $3) AND timescale = $4 AND name = $5
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         rows = await statement.fetch(product, start, stop, timescale.name, name)
