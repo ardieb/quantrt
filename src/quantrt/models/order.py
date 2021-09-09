@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Optional, Iterator
+from typing import Optional, Iterable
 
 
 __all__ = ["OrderStatus", "Order", "save", "save_batch", "fetch", "fetch_batch", "fetch_open"]
@@ -75,7 +75,7 @@ async def save(order: Order, pool: Optional[asyncpg.Pool] = None):
             order.price))
 
 
-async def save_batch(orders: Iterator[Order], pool: Optional[asyncpg.Pool] = None):
+async def save_batch(orders: Iterable[Order], pool: Optional[asyncpg.Pool] = None):
     if not pool:
         pool = quantrt.common.config.db_conn_pool
     if not pool:
@@ -132,7 +132,7 @@ async def fetch(id: str, pool: Optional[asyncpg.Pool] = None) -> Order:
     )
 
 
-async def fetch_batch(ids: Iterator[str], pool: Optional[asyncpg.Pool] = None) -> Iterator[Order]:
+async def fetch_batch(ids: Iterable[str], pool: Optional[asyncpg.Pool] = None) -> Iterable[Order]:
     if not pool:
         pool = quantrt.common.config.db_conn_pool
     if not pool:
@@ -156,7 +156,7 @@ async def fetch_batch(ids: Iterator[str], pool: Optional[asyncpg.Pool] = None) -
     ) for row in rows]
 
 
-async def fetch_open(product_id: str, pool: Optional[asyncpg.Pool] = None) -> Iterator[Order]:
+async def fetch_open(product_id: str, pool: Optional[asyncpg.Pool] = None) -> Iterable[Order]:
     if not pool:
         pool = quantrt.common.config.db_conn_pool
     if not pool:

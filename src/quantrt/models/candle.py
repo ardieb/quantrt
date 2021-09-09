@@ -9,7 +9,7 @@ import quantrt.util.time
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, Iterator
+from typing import Optional, Iterable
 
 from quantrt.common.timescale import Timescale
 
@@ -72,7 +72,7 @@ async def save(candle: Candle, pool: Optional[asyncpg.Pool] = None):
             candle.volume))
 
 
-async def save_batch(candles: Iterator[Candle], pool: Optional[asyncpg.Pool] = None):
+async def save_batch(candles: Iterable[Candle], pool: Optional[asyncpg.Pool] = None):
     if not pool:
         pool = quantrt.common.config.db_conn_pool
     if not pool:
@@ -107,7 +107,7 @@ async def save_batch(candles: Iterator[Candle], pool: Optional[asyncpg.Pool] = N
             candle.volume) for candle in candles])
 
 
-async def fetch(timestamp: datetime, timescale: Timescale, pool: Optional[asyncpg.Pool]) -> Candle:
+async def fetch(product: str, timestamp: datetime, timescale: Timescale, pool: Optional[asyncpg.Pool] = None) -> Candle:
     if not pool:
         pool = quantrt.common.config.db_conn_pool
     if not pool:
@@ -117,10 +117,10 @@ async def fetch(timestamp: datetime, timescale: Timescale, pool: Optional[asyncp
     timestamp = quantrt.util.time.datetime_floor(timestamp, timescale)
     async with pool.acquire() as conn:
         sql = """
-            SELECT * FROM candle WHERE timestamp = $1 AND timescale = $2
+            SELECT * FROM candle WHERE product = $1 AND timestamp = $2 AND timescale = $3
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
-        row = await statement.fetch(timestamp, timescale.name)
+        row = await statement.fetch(product, timestamp, timescale.name)
     
     return Candle(
         product=row[0]["product"],
@@ -134,7 +134,7 @@ async def fetch(timestamp: datetime, timescale: Timescale, pool: Optional[asyncp
     )
 
 
-async def fetch_batch(start: datetime, stop: datetime, timescale: Timescale, pool: Optional[asyncpg.Pool]) -> Iterator[Candle]:
+async def fetch_batch(product: str, start: datetime, stop: datetime, timescale: Timescale, pool: Optional[asyncpg.Pool] = None) -> Iterable[Candle]:
     if not pool:
         pool = quantrt.common.config.db_conn_pool
     if not pool:
@@ -146,10 +146,10 @@ async def fetch_batch(start: datetime, stop: datetime, timescale: Timescale, poo
 
     async with pool.acquire() as conn:
         sql = """
-            SELECT * FROM candle WHERE timestamp => $1 AND timestamp <= $2 AND timescale = $3
+            SELECT * FROM candle WHERE product = $1 AND (timestamp => $2 AND timestamp <= $3) AND timescale = $4
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
-        rows = await statement.fetch(start, stop, timescale.name)
+        rows = await statement.fetch(product, start, stop, timescale.name)
     
     return [Candle(
         product=row["product"],
