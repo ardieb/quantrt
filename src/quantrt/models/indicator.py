@@ -24,14 +24,14 @@ class Indicator:
     # Product identifier
     product: str
     # Timestamp for the indicator.
-    timestamp: datetime
+    tstamp: datetime
     # Timescale at which the indicator was calculated.
     timescale: Timescale
     # Name of the indicator.
     name: str
     # Values calculated stored as json, user's responsibility to keep track
     # of which are which.
-    values: Dict
+    data: Dict
 
 
 async def save(indicator: Indicator, pool: Optional[asyncpg.Pool] = None):
@@ -42,25 +42,25 @@ async def save(indicator: Indicator, pool: Optional[asyncpg.Pool] = None):
         raise EnvironmentError("No connection pool has been configured.")
 
     async with pool.acquire() as conn:
-        values = json.dumps(indicator.values)
+        data = json.dumps(indicator.data)
         sql = """
             INSERT INTO indicator 
-                (product, timestamp, timescale, name, values)
+                (product, tstamp, timescale, name, data)
             VALUES 
                 ($1, $2, $3, $4, $5)
             ON CONFLICT 
-                (product, timestamp, timescale, name) 
+                (product, tstamp, timescale, name) 
             DO UPDATE
             SET 
-                values = EXCLUDED.values
+                data = EXCLUDED.data
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         await statement.executemany((
             indicator.product, 
-            indicator.timestamp, 
+            indicator.tstamp, 
             indicator.timescale.name, 
             indicator.name, 
-            values))
+            data))
 
 
 async def save_batch(indicators: Iterable[Indicator], pool: Optional[asyncpg.Pool] = None):
@@ -73,46 +73,46 @@ async def save_batch(indicators: Iterable[Indicator], pool: Optional[asyncpg.Poo
     async with pool.acquire() as conn:
         sql = """
             INSERT INTO indicator 
-                (product, timestamp, timescale, name, values)
+                (product, tstamp, timescale, name, data)
             VALUES 
                 ($1, $2, $3, $4, $5)
             ON CONFLICT 
-                (product, timestamp, timescale, name) 
+                (product, tstamp, timescale, name) 
             DO UPDATE
             SET 
-                values = EXCLUDED.values
+                data = EXCLUDED.data
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         await statement.executemany([(
             indicator.product, 
-            indicator.timestamp, 
+            indicator.tstamp, 
             indicator.timescale.name, 
             indicator.name, 
-            json.dumps(indicator.values)) for indicator in indicators])
+            json.dumps(indicator.data)) for indicator in indicators])
 
 
-async def fetch(product: str, name: str, timestamp: datetime, timescale: Timescale, pool: Optional[asyncpg.Pool] = None) -> Indicator:
+async def fetch(product: str, name: str, tstamp: datetime, timescale: Timescale, pool: Optional[asyncpg.Pool] = None) -> Indicator:
     if not pool:
         pool = quantrt.common.config.db_conn_pool
     if not pool:
         quantrt.common.log.QuantrtLog.exception("No connection pool has been configured.")
         raise EnvironmentError("No connection pool has been configured.")
 
-    timestamp = quantrt.util.time.datetime_floor(timestamp, timescale)
+    tstamp = quantrt.util.time.datetime_floor(tstamp, timescale)
 
     async with pool.acquire() as conn:
         sql = """
-            SELECT * FROM indicator WHERE product = $1 AND timestamp = $2 AND timescale = $3 AND name = $4
+            SELECT * FROM indicator WHERE product = $1 AND tstamp = $2 AND timescale = $3 AND name = $4
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
-        row = await statement.fetchrow(product, timestamp, timescale.name, name)
+        row = await statement.fetchrow(product, tstamp, timescale.name, name)
     
     return Indicator(
         product=row["product"],
-        timestamp=row["timestamp"],
+        tstamp=row["tstamp"],
         timescale=Timescale(row["timescale"]),
         name=row["name"],
-        values=json.loads(row["values"]))
+        data=json.loads(row["data"]))
 
 
 async def fetch_batch(product: str, name: str, start: datetime, stop: datetime, timescale: Timescale, pool: Optional[asyncpg.Pool] = None) -> Iterable[Indicator]:
@@ -127,14 +127,14 @@ async def fetch_batch(product: str, name: str, start: datetime, stop: datetime, 
 
     async with pool.acquire() as conn:
         sql = """
-            SELECT * FROM indicator WHERE product = $1 AND (timestamp => $2 AND timestamp <= $3) AND timescale = $4 AND name = $5
+            SELECT * FROM indicator WHERE product = $1 AND (tstamp => $2 AND tstamp <= $3) AND timescale = $4 AND name = $5
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         rows = await statement.fetch(product, start, stop, timescale.name, name)
     
     return [Indicator(
         product=row["product"],
-        timestamp=row["timestamp"],
+        tstamp=row["tstamp"],
         timescale=Timescale(row["timescale"]),
         name=row["name"],
-        values=json.loads(row["values"])) for row in rows]
+        data=json.loads(row["data"])) for row in rows]

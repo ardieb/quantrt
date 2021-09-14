@@ -57,5 +57,3 @@ def sign_websocket_request(secret: str, key: str, passphrase: str, request: Dict
     request["key"] = key
     request["passphrase"] = passphrase
     request["timestamp"] = timestamp
-
-    return request

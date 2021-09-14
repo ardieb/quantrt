@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
+import quantrt.common.config
 
+from datetime import datetime, timedelta
 from quantrt.common.timescale import Timescale
 
 
-__all__ = ["datetime_floor"]
+__all__ = ["datetime_floor", "now"]
 
 
 def datetime_floor(dt: datetime, scale: Timescale) -> datetime:
@@ -23,3 +24,14 @@ def datetime_floor(dt: datetime, scale: Timescale) -> datetime:
         return dt.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
     # Fall through for unknown
     return dt
+
+
+def now() -> datetime:
+    if quantrt.common.config.build_label == "live":
+        return datetime.now()
+    return quantrt.common.config.curtime
+
+
+def tick(secs: int):
+     if quantrt.common.config.build_label == "backtest":
+        quantrt.common.config.curtime += timedelta(seconds=secs)

@@ -21,8 +21,8 @@ __all__ = ["Candle", "save", "save_batch", "fetch", "fetch_batch"]
 class Candle:
     # The product ticker.
     product: str
-    # The timestamp where this candle started tracking.
-    timestamp: datetime
+    # The tstamp where this candle started tracking.
+    tstamp: datetime
     # The granularity at which this candle captures information.
     timescale: Timescale
     # The opening price of the candle.
@@ -47,11 +47,11 @@ async def save(candle: Candle, pool: Optional[asyncpg.Pool] = None):
     async with pool.acquire() as conn:
         sql = """
             INSERT INTO candle 
-                (product, timestamp, timescale, open, high, low, close, volume)
+                (product, tstamp, timescale, open, high, low, close, volume)
             VALUES 
                 ($1, $2, $3, $4, $5, $6, $7, $8)
             ON CONFLICT 
-                (product, timestamp, timescale) 
+                (product, tstamp, timescale) 
             DO UPDATE
             SET 
                 open = EXCLUDED.open,
@@ -63,7 +63,7 @@ async def save(candle: Candle, pool: Optional[asyncpg.Pool] = None):
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         await statement.executemany((
             candle.product, 
-            candle.timestamp, 
+            candle.tstamp, 
             candle.timescale.name, 
             candle.open, 
             candle.high, 
@@ -82,11 +82,11 @@ async def save_batch(candles: Iterable[Candle], pool: Optional[asyncpg.Pool] = N
     async with pool.acquire() as conn:
         sql = """
             INSERT INTO candle 
-                (product, timestamp, timescale, open, high, low, close, volume)
+                (product, tstamp, timescale, open, high, low, close, volume)
             VALUES 
                 ($1, $2, $3, $4, $5, $6, $7, $8)
             ON CONFLICT 
-                (product, timestamp, timescale) 
+                (product, tstamp, timescale) 
             DO UPDATE
             SET 
                 open = EXCLUDED.open,
@@ -98,7 +98,7 @@ async def save_batch(candles: Iterable[Candle], pool: Optional[asyncpg.Pool] = N
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         await statement.executemany([(
             candle.product, 
-            candle.timestamp, 
+            candle.tstamp, 
             candle.timescale.name, 
             candle.open, 
             candle.high, 
@@ -107,24 +107,24 @@ async def save_batch(candles: Iterable[Candle], pool: Optional[asyncpg.Pool] = N
             candle.volume) for candle in candles])
 
 
-async def fetch(product: str, timestamp: datetime, timescale: Timescale, pool: Optional[asyncpg.Pool] = None) -> Candle:
+async def fetch(product: str, tstamp: datetime, timescale: Timescale, pool: Optional[asyncpg.Pool] = None) -> Candle:
     if not pool:
         pool = quantrt.common.config.db_conn_pool
     if not pool:
         quantrt.common.log.QuantrtLog.exception("No connection pool has been configured.")
         raise EnvironmentError("No connection pool has been configured.")
 
-    timestamp = quantrt.util.time.datetime_floor(timestamp, timescale)
+    tstamp = quantrt.util.time.datetime_floor(tstamp, timescale)
     async with pool.acquire() as conn:
         sql = """
-            SELECT * FROM candle WHERE product = $1 AND timestamp = $2 AND timescale = $3
+            SELECT * FROM candle WHERE product = $1 AND tstamp = $2 AND timescale = $3
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
-        row = await statement.fetch(product, timestamp, timescale.name)
+        row = await statement.fetch(product, tstamp, timescale.name)
     
     return Candle(
         product=row[0]["product"],
-        timestamp=row[0]["timestamp"],
+        tstamp=row[0]["tstamp"],
         timescale=Timescale(row[0]["timescale"]),
         open=row[0]["open"],
         high=row[0]["high"],
@@ -146,14 +146,14 @@ async def fetch_batch(product: str, start: datetime, stop: datetime, timescale: 
 
     async with pool.acquire() as conn:
         sql = """
-            SELECT * FROM candle WHERE product = $1 AND (timestamp => $2 AND timestamp <= $3) AND timescale = $4
+            SELECT * FROM candle WHERE product = $1 AND (tstamp => $2 AND tstamp <= $3) AND timescale = $4
         """
         statement = await quantrt.util.database.prepare_sql(sql, conn)
         rows = await statement.fetch(product, start, stop, timescale.name)
     
     return [Candle(
         product=row["product"],
-        timestamp=row["timestamp"],
+        tstamp=row["tstamp"],
         timescale=Timescale(row["timescale"]),
         open=row["open"],
         high=row["high"],

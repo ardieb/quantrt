@@ -1,13 +1,13 @@
 import os
 
 from asyncpg import Pool
-
 from collections import OrderedDict
+from datetime import datetime
 
 from quantrt.common.types import REST
 
 
-__all__ = ["app_dir", "dsn", "db_conn_pool", "build_label", "rest_client", "prepared_sql"]
+__all__ = ["app_dir", "dsn", "db_conn_pool", "build_label", "rest_client", "prepared_sql", "curtime"]
 
 
 # The root directory of the app. This is three levels above this file's path.
@@ -36,3 +36,10 @@ rest_client: REST
 
 # SQL prepared statements for caching.
 prepared_sql: OrderedDict
+
+# the current time, useful for simulations in backtesting strategies.
+curtime: datetime
+
+
+# coinbase pro websocket feed url
+ws_url: str = "wss://ws-feed.pro.coinbase.com"

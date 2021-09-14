@@ -30,7 +30,7 @@ class Order:
     # Product ticker.
     product: str
     # Timestamp of the trade.
-    timestamp: datetime
+    tstamp: datetime
     # Order status
     status: OrderStatus
     # Which side?
@@ -51,14 +51,14 @@ async def save(order: Order, pool: Optional[asyncpg.Pool] = None):
     async with pool.acquire() as conn:
         sql = """
             INSERT INTO order 
-                (id, product, timestamp, status, side, amount, price)
+                (id, product, tstamp, status, side, amount, price)
             VALUES 
                 ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT 
                 (product, order_id) 
             DO UPDATE
             SET
-                timestamp = EXCLUDED.timestamp,
+                tstamp = EXCLUDED.tstamp,
                 status = EXCLUDED.status,
                 side = EXCLUDED.side,
                 amount = EXCLUDED.amount,
@@ -68,7 +68,7 @@ async def save(order: Order, pool: Optional[asyncpg.Pool] = None):
         await statement.executemany((
             order.order_id,
             order.product,
-            order.timestamp,
+            order.tstamp,
             order.status.name,
             order.side,
             order.amount,
@@ -85,14 +85,14 @@ async def save_batch(orders: Iterable[Order], pool: Optional[asyncpg.Pool] = Non
     async with pool.acquire() as conn:
         sql = """
             INSERT INTO order 
-                (id, product, timestamp, status, side, amount, price)
+                (id, product, tstamp, status, side, amount, price)
             VALUES 
                 ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT 
                 (product, order_id) 
             DO UPDATE
             SET
-                timestamp = EXCLUDED.timestamp,
+                tstamp = EXCLUDED.tstamp,
                 status = EXCLUDED.status,
                 side = EXCLUDED.side,
                 amount = EXCLUDED.amount,
@@ -102,7 +102,7 @@ async def save_batch(orders: Iterable[Order], pool: Optional[asyncpg.Pool] = Non
         await statement.executemany([(
             order.order_id,
             order.product,
-            order.timestamp,
+            order.tstamp,
             order.status.name,
             order.side,
             order.amount,
@@ -124,7 +124,7 @@ async def fetch(id: str, pool: Optional[asyncpg.Pool] = None) -> Order:
     return Order(
         order_id=row[0]["order_id"],
         product=row[0]["product"],
-        timestamp=row[0]["timestamp"],
+        tstamp=row[0]["tstamp"],
         status=row[0]["status"],
         side=row[0]["side"],
         amount=row[0]["amount"],
@@ -148,7 +148,7 @@ async def fetch_batch(ids: Iterable[str], pool: Optional[asyncpg.Pool] = None) -
     return [Order(
         order_id=row["order_id"],
         product=row["product"],
-        timestamp=row["timestamp"],
+        tstamp=row["tstamp"],
         status=row["status"],
         side=row["side"],
         amount=row["amount"],
@@ -171,7 +171,7 @@ async def fetch_open(product_id: str, pool: Optional[asyncpg.Pool] = None) -> It
     return [Order(
         order_id=row["order_id"],
         product=row["product"],
-        timestamp=row["timestamp"],
+        tstamp=row["tstamp"],
         status=row["status"],
         side=row["side"],
         amount=row["amount"],
