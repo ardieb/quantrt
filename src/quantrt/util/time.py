@@ -2,6 +2,7 @@ import quantrt.common.config
 
 from datetime import datetime, timedelta
 from quantrt.common.timescale import Timescale
+from typing import List
 
 
 __all__ = ["datetime_floor", "now"]
@@ -35,3 +36,11 @@ def now() -> datetime:
 def tick(secs: int):
      if quantrt.common.config.build_label == "backtest":
         quantrt.common.config.curtime += timedelta(seconds=secs)
+
+
+def timestamps(start: datetime, stop: datetime, interval: timedelta) -> List[datetime]:
+    times = [start]
+    while times[-1] + interval < stop:
+        times.append(times[-1] + interval)
+    times.append(stop)
+    return times
